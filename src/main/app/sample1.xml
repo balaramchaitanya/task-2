@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd">
+    <flow name="sample1Flow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/sample" doc:name="HTTP" allowedMethods="POST"/>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%input payload application/json
+%output application/json
+---
+
+payload mapObject  {
+	(phone: payload.phone1 ++ "-" ++ payload.phone2 ) when $.phone1 !="" and $.phone2 !="",
+	 (($$): $) when $$ != 'phone1' and $$ != 'phone2'
+	} -'phone1' -'phone2'
+]]></dw:set-payload>
+        </dw:transform-message>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+    </flow>
+</mule>

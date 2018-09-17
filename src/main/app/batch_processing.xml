@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
+    <file:connector name="File" autoDelete="true" streaming="true" validateConnections="true" doc:name="File"/>
+    <batch:job name="batch_processingBatch">
+        <batch:input>
+            <http:listener config-ref="HTTP_Listener_Configuration" path="/batchdata" doc:name="HTTP"/>
+            <dw:transform-message doc:name="Transform Message" metadata:id="0e969842-8ad2-4ef9-ad26-bf581d7434aa">
+                <dw:input-payload mimeType="application/java"/>
+                <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload splitBy "\n"]]></dw:set-payload>
+            </dw:transform-message>
+        </batch:input>
+        <batch:process-records>
+            <batch:step name="Batch_Step">
+                <enricher target="#[variable:name]" doc:name="Message Enricher">
+                    <set-payload value="'chaitanya'" doc:name="Set Payload"/>
+                </enricher>
+                <dw:transform-message doc:name="Transform Message">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+
+%var var=flowVars.name
+---
+payload  ++ ", name: " ++  var ++ "\n"]]></dw:set-payload>
+                </dw:transform-message>
+                <object-to-string-transformer returnClass="java.lang.String" doc:name="Object to String"/>
+                <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+            </batch:step>
+        </batch:process-records>
+        <batch:on-complete>
+            <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+        </batch:on-complete>
+    </batch:job>
+</mule>
